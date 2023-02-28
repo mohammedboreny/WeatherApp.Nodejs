@@ -2,7 +2,8 @@
 const express = require('express')
 // to access assets
 const path = require('node:path');
-
+const forecast = require('./utils/forecast')
+const geocode=require('./utils/geocode')
 const hbs=require('hbs')
 
 const partialPath=path.join(__dirname,'../templates/partials')
@@ -37,15 +38,49 @@ app.get('/help', (req, res) =>
 
 
 app.get('/weather', (req, res) => {
+  if (!req.query.address) {
+    return res.send({error:"you must provide an address"})
+    }
+
+    geocode(req.query.address, (error, {longitude,latitude,country_name}) => {
+        
+        forecast(latitude, longitude, (error,data) => {
+            if (error) {
+                return 'somthing went wrong'
+            }
+            res.send({
+                country_name,
+                forcast:data.weather_descriptions
+                
+            })
+        })
+    })
+   
+})
+
+app.get('/products', (req, res) => {
+    if (!req.query.search) {
+      return res.send({error:"you must provide a search term"})
+    }
+    console.log(req.query.search);
     res.send({
-        forecast: "",
-        location: {
-            lat: 0,
-            lng: 0
-        }
+        products:[]
     })
 })
 
+app.get('/help/*', (req, res) => {
+    res.render('page404', {
+        text:'help article not found'
+    })
+})
+
+
+
+app.get('*', (req, res) => {
+    res.render('page404', {
+        text:"page not found"
+    })
+})
 
 
 app.listen(3000, () => {
